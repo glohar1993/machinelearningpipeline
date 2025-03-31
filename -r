@@ -1,0 +1,6 @@
+# Inside requirements.txt
+dvc
+dagshub
+scikit-learn
+mlflow
+dvc[s3]
