@@ -1,0 +1,5 @@
+outs:
+- md5: 049bd78b4dac1300e5d23d0a42670a99
+  size: 23877
+  hash: md5
+  path: pima_diabetes.csv
