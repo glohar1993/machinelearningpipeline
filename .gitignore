@@ -17,6 +17,9 @@ models/*
 !data/raw/*.dvc
 !data/*.dvc
 
+# Directly tracked data files
+pima_diabetes.csv
+
 # MLflow
 mlruns/
 
