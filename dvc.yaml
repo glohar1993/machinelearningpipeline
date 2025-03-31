@@ -1,9 +1,16 @@
 stages:
+  data_load:
+    cmd: cp data/raw/pima_diabetes.csv .
+    deps: 
+      - data/raw/pima_diabetes.csv
+    outs:
+      - pima_diabetes.csv
+  
   preprocess:
     cmd: python src/preprocess.py
     deps:
       - src/preprocess.py
-      - data/raw/pima_diabetes.csv
+      - pima_diabetes.csv
       - params.yaml
     outs:
       - data/preprocessed/pima_diabetes_clean.csv

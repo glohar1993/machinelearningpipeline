@@ -3,14 +3,14 @@ stages:
   preprocess:
     cmd: python src/preprocess.py
     deps:
-    - path: data/raw/pima_diabetes.csv
-      hash: md5
-      md5: 049bd78b4dac1300e5d23d0a42670a99
-      size: 23877
     - path: params.yaml
       hash: md5
       md5: 78fb67d44c7ae41236fd22ce1dfa0fe8
       size: 1175
+    - path: pima_diabetes.csv
+      hash: md5
+      md5: 049bd78b4dac1300e5d23d0a42670a99
+      size: 23877
     - path: src/preprocess.py
       hash: md5
       md5: 85108ed015711f219f995f26338bca5d
@@ -68,3 +68,15 @@ stages:
       hash: md5
       md5: b35704405a727fa98cf063478ed3fa8f
       size: 275
+  data_load:
+    cmd: cp data/raw/pima_diabetes.csv .
+    deps:
+    - path: data/raw/pima_diabetes.csv
+      hash: md5
+      md5: 049bd78b4dac1300e5d23d0a42670a99
+      size: 23877
+    outs:
+    - path: pima_diabetes.csv
+      hash: md5
+      md5: 049bd78b4dac1300e5d23d0a42670a99
+      size: 23877
