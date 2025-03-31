@@ -1,5 +1,6 @@
 [core]
     remote = origin
 ['remote "origin"']
-    url = s3://dvc
-    endpointurl = https://dagshub.com/ganeshml15/my-first-repo.s3
+    url = s3://my-first-repo
+    endpointurl = https://dagshub.com/api/v1/repo-buckets/s3/ganeshml15
+    region = us-east-1
