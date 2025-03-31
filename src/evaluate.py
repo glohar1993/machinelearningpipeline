@@ -50,106 +50,82 @@ def load_params():
     return params
 
 def evaluate():
-    """Evaluate the trained model and log results to MLflow"""
+    # Set MLflow tracking URI and experiment
+    mlflow.set_tracking_uri("https://dagshub.com/ganeshml15/my-first-repo.mlflow")
+    mlflow.set_experiment("diabetes_prediction")
+    
     # Start MLflow run
-    with mlflow.start_run(run_name="model_evaluation") as run:
-        # Load parameters
-        params = load_params()
-        
-        # Load model
-        model_path = params["training"]["model_output"]
-        with open(model_path, "rb") as f:
+    with mlflow.start_run(run_name="model_evaluation"):
+        # Load the model
+        with open('models/random_forest_model.pkl', 'rb') as f:
             model = pickle.load(f)
         
-        # Load data
-        data = pd.read_csv(params["training"]["input"])
-        
-        # Split features and target
-        X = data.drop(["Outcome"], axis=1)
-        y = data["Outcome"]
+        # Load test data
+        data = pd.read_csv('data/preprocessed/pima_diabetes_clean.csv')
+        X = data.drop('Outcome', axis=1)
+        y = data['Outcome']
         
         # Make predictions
         y_pred = model.predict(X)
         
-        # Calculate metrics
-        accuracy = accuracy_score(y, y_pred)
-        clf_report = classification_report(y, y_pred, output_dict=True)
-        conf_matrix = confusion_matrix(y, y_pred)
+        # Generate classification report
+        report = classification_report(y, y_pred, output_dict=True)
+        
+        # Calculate feature importance
+        feature_importance = pd.DataFrame({
+            'feature': X.columns,
+            'importance': model.feature_importances_
+        }).sort_values('importance', ascending=False)
+        
+        # Save metrics
+        metrics = {
+            "accuracy": report['accuracy'],
+            "precision_0": report['0']['precision'],
+            "recall_0": report['0']['recall'],
+            "f1_score_0": report['0']['f1-score'],
+            "precision_1": report['1']['precision'],
+            "recall_1": report['1']['recall'],
+            "f1_score_1": report['1']['f1-score']
+        }
+        
+        # Save metrics to file
+        os.makedirs('metrics', exist_ok=True)
+        with open('metrics/evaluate_metrics.json', 'w') as f:
+            json.dump(metrics, f, indent=4)
         
         # Log metrics to MLflow
-        mlflow.log_metric("accuracy", accuracy)
-        mlflow.log_metric("precision_class_0", clf_report["0"]["precision"])
-        mlflow.log_metric("recall_class_0", clf_report["0"]["recall"])
-        mlflow.log_metric("precision_class_1", clf_report["1"]["precision"])
-        mlflow.log_metric("recall_class_1", clf_report["1"]["recall"])
+        mlflow.log_metrics(metrics)
         
         # Create and save confusion matrix plot
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", 
-                   xticklabels=["No Diabetes", "Diabetes"],
-                   yticklabels=["No Diabetes", "Diabetes"])
-        plt.xlabel("Predicted")
-        plt.ylabel("Actual")
-        plt.title("Confusion Matrix")
-        
-        # Create directory if it doesn't exist
-        os.makedirs("reports", exist_ok=True)
-        
-        # Save confusion matrix
-        plt.savefig("reports/confusion_matrix.png")
-        mlflow.log_artifact("reports/confusion_matrix.png")
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(confusion_matrix(y, y_pred), annot=True, fmt='d', cmap='Blues')
+        plt.title('Confusion Matrix')
+        plt.ylabel('True Label')
+        plt.xlabel('Predicted Label')
+        plt.savefig('confusion_matrix.png')
         plt.close()
         
         # Create and save feature importance plot
-        feature_importance = model.feature_importances_
-        features = X.columns
-        
-        # Sort feature importances in descending order
-        indices = np.argsort(feature_importance)[::-1]
-        
-        plt.figure(figsize=(12, 8))
-        plt.bar(range(X.shape[1]), feature_importance[indices], align="center")
-        plt.xticks(range(X.shape[1]), [features[i] for i in indices], rotation=90)
-        plt.xlabel("Features")
-        plt.ylabel("Importance")
-        plt.title("Feature Importance")
-        plt.tight_layout()
-        
-        # Save feature importance plot
-        plt.savefig("reports/feature_importance.png")
-        mlflow.log_artifact("reports/feature_importance.png")
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x='importance', y='feature', data=feature_importance)
+        plt.title('Feature Importance')
+        plt.savefig('feature_importance.png')
         plt.close()
         
-        # Save metrics as JSON for DVC
-        metrics_dict = {
-            "accuracy": float(accuracy),
-            "precision_class_0": float(clf_report["0"]["precision"]),
-            "recall_class_0": float(clf_report["0"]["recall"]),
-            "precision_class_1": float(clf_report["1"]["precision"]),
-            "recall_class_1": float(clf_report["1"]["recall"]),
-            "f1_class_0": float(clf_report["0"]["f1-score"]),
-            "f1_class_1": float(clf_report["1"]["f1-score"])
-        }
+        # Log artifacts
+        mlflow.log_artifact('confusion_matrix.png')
+        mlflow.log_artifact('feature_importance.png')
         
-        with open("reports/metrics.json", "w") as f:
-            json.dump(metrics_dict, f, indent=4)
+        # Save feature importance to CSV
+        feature_importance.to_csv('feature_importance.csv', index=False)
         
-        # Print classification report
+        # Print results
         print("\nClassification Report:")
         print(classification_report(y, y_pred))
         
-        # Print feature importance
         print("\nFeature Importance:")
-        for i, feature in enumerate(features[indices]):
-            print(f"{feature}: {feature_importance[indices[i]]:.6f}")
-        
-        # Get MLflow run URL and print it
-        client = MlflowClient()
-        run_id = run.info.run_id
-        experiment_id = run.info.experiment_id
-        
-        print(f"\n🏃 View run at: {mlflow.get_tracking_uri()}/#/experiments/{experiment_id}/runs/{run_id}")
-        print(f"🧪 View experiment at: {mlflow.get_tracking_uri()}/#/experiments/{experiment_id}")
+        for _, row in feature_importance.iterrows():
+            print(f"{row['feature']}: {row['importance']:.6f}")
 
 if __name__ == "__main__":
     evaluate()

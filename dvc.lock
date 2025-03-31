@@ -7,67 +7,63 @@ stages:
       hash: md5
       md5: 049bd78b4dac1300e5d23d0a42670a99
       size: 23877
-    - path: params.yaml
-      hash: md5
-      md5: 78fb67d44c7ae41236fd22ce1dfa0fe8
-      size: 1175
     - path: src/preprocess.py
       hash: md5
-      md5: 85108ed015711f219f995f26338bca5d
-      size: 3168
+      md5: d769a41ab48baebfb6f85e95afef4d92
+      size: 3237
     outs:
     - path: data/preprocessed/pima_diabetes_clean.csv
       hash: md5
-      md5: 6e95064b16680aaaebcd1233f8602f60
-      size: 122619
+      md5: 26b1e13076d09acca08b7c5560483de0
+      size: 124289
+    - path: metrics/preprocess_metrics.json
+      hash: md5
+      md5: ab07977766fba2d9b367e01eb0202ff4
+      size: 133
   train:
     cmd: python src/train.py
     deps:
     - path: data/preprocessed/pima_diabetes_clean.csv
       hash: md5
-      md5: 6e95064b16680aaaebcd1233f8602f60
-      size: 122619
-    - path: params.yaml
-      hash: md5
-      md5: 78fb67d44c7ae41236fd22ce1dfa0fe8
-      size: 1175
+      md5: 26b1e13076d09acca08b7c5560483de0
+      size: 124289
     - path: src/train.py
       hash: md5
-      md5: a1a30b5028112ef1910b79b07b0772db
-      size: 5071
+      md5: f6d16490468b2e33d3dfa977856a5f7d
+      size: 3601
     outs:
+    - path: metrics/train_metrics.json
+      hash: md5
+      md5: 38aadf781721b8bde4b588f4e5694584
+      size: 152
     - path: models/random_forest_model.pkl
       hash: md5
-      md5: eb7696e9583181283505227004911729
-      size: 1413497
+      md5: d18e96a3dfdd85b316a8d28e598a59a0
+      size: 1685275
   evaluate:
     cmd: python src/evaluate.py
     deps:
     - path: models/random_forest_model.pkl
       hash: md5
-      md5: eb7696e9583181283505227004911729
-      size: 1413497
-    - path: params.yaml
-      hash: md5
-      md5: 78fb67d44c7ae41236fd22ce1dfa0fe8
-      size: 1175
+      md5: d18e96a3dfdd85b316a8d28e598a59a0
+      size: 1685275
     - path: src/evaluate.py
       hash: md5
-      md5: 91c9fe5cbffd7e36850e7d30fab42a79
-      size: 5504
+      md5: 5b6498e1eaae0904fad184535ed65206
+      size: 4309
     outs:
-    - path: reports/confusion_matrix.png
+    - path: confusion_matrix.png
       hash: md5
-      md5: c29efd486c95e0f25c99745fbad58d29
-      size: 21929
-    - path: reports/feature_importance.png
+      md5: fb3a35c815372358b9f2f3e8a76f1b6a
+      size: 15771
+    - path: feature_importance.png
       hash: md5
-      md5: d6cedb3e5e4f227f23e0f2c1094d6546
-      size: 27990
-    - path: reports/metrics.json
+      md5: e1d320cc5942f9703c37efbbf1154704
+      size: 19325
+    - path: metrics/evaluate_metrics.json
       hash: md5
-      md5: b35704405a727fa98cf063478ed3fa8f
-      size: 275
+      md5: 4d95adf1f091725accc49661f99dc13f
+      size: 225
   data_load:
     cmd: cp data/raw/pima_diabetes.csv .
     deps:

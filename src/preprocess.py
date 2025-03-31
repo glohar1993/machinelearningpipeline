@@ -31,6 +31,7 @@ import yaml
 import os
 from sklearn.preprocessing import StandardScaler
 import mlflow
+import json
 # Import MLflow configuration
 import mlflow_config
 
@@ -41,58 +42,54 @@ def load_params():
     return params
 
 def preprocess_data():
-    """Preprocess the diabetes dataset and save results"""
+    # Set MLflow tracking URI and experiment
+    mlflow.set_tracking_uri("https://dagshub.com/ganeshml15/my-first-repo.mlflow")
+    mlflow.set_experiment("diabetes_prediction")
+    
     # Start MLflow run
-    with mlflow.start_run(run_name="preprocessing") as run:
-        # Load parameters
-        params = load_params()
-        
-        # Get file paths from params
-        input_file = params["preprocessing"]["input"]
-        output_file = params["preprocessing"]["output"]
-        
+    with mlflow.start_run(run_name="preprocessing"):
         # Load data
-        data = pd.read_csv(input_file)
+        data = pd.read_csv('data/raw/pima_diabetes.csv')
         
-        # Log data shape as a metric
-        mlflow.log_param("input_shape", str(data.shape))
+        # Get initial shape
+        initial_shape = data.shape
         
-        # Fill missing values with mean
-        data.fillna(data.mean(), inplace=True)
-        
-        # Split features and target
-        X = data.drop(["Outcome"], axis=1)
-        y = data["Outcome"]
+        # Handle missing values (0 values in certain columns)
+        columns_to_process = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
+        for column in columns_to_process:
+            data[column] = data[column].replace(0, np.nan)
+            data[column] = data[column].fillna(data[column].mean())
         
         # Scale features
         scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-        
-        # Combine scaled features with target
-        data_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-        data_scaled["Outcome"] = y.values
-        
-        # Create directory if it doesn't exist
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        features = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
+        data[features] = scaler.fit_transform(data[features])
         
         # Save preprocessed data
-        data_scaled.to_csv(output_file, index=False)
+        os.makedirs('data/preprocessed', exist_ok=True)
+        output_file = 'data/preprocessed/pima_diabetes_clean.csv'
+        data.to_csv(output_file, index=False)
         
         # Log metrics
-        mlflow.log_param("output_shape", str(data_scaled.shape))
+        metrics = {
+            "initial_rows": initial_shape[0],
+            "initial_columns": initial_shape[1],
+            "final_rows": data.shape[0],
+            "final_columns": data.shape[1],
+            "missing_values_filled": sum([len(data[data[col] == 0]) for col in columns_to_process])
+        }
+        
+        # Save metrics to file
+        os.makedirs('metrics', exist_ok=True)
+        with open('metrics/preprocess_metrics.json', 'w') as f:
+            json.dump(metrics, f, indent=4)
+        
+        # Log metrics to MLflow
+        mlflow.log_metrics(metrics)
         mlflow.log_artifact(output_file)
         
-        # Print information
-        print(f"Preprocessed data shape: {data_scaled.shape}")
+        print(f"Preprocessed data shape: {data.shape}")
         print(f"Saved preprocessed data to: {output_file}")
-        
-        # Get MLflow run URL and print it
-        client = mlflow.tracking.MlflowClient()
-        run_id = run.info.run_id
-        experiment_id = run.info.experiment_id
-        
-        print(f"🏃 View run preprocessing at: {mlflow.get_tracking_uri()}/#/experiments/{experiment_id}/runs/{run_id}")
-        print(f"🧪 View experiment at: {mlflow.get_tracking_uri()}/#/experiments/{experiment_id}")
 
 if __name__ == "__main__":
     preprocess_data()

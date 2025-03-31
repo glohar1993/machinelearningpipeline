@@ -1,0 +1,7 @@
+{
+    "training_accuracy": 1.0,
+    "testing_accuracy": 0.7532467532467533,
+    "n_estimators": 100,
+    "train_samples": 614,
+    "test_samples": 154
+}

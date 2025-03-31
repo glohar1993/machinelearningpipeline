@@ -39,6 +39,7 @@ import mlflow
 from mlflow.models.signature import infer_signature
 # Import MLflow configuration
 import mlflow_config
+import json
 
 def load_params():
     """Load parameters from params.yaml file"""
@@ -47,103 +48,64 @@ def load_params():
     return params
 
 def train():
-    """Train a random forest model on preprocessed data and log to MLflow"""
+    # Set MLflow tracking URI and experiment
+    mlflow.set_tracking_uri("https://dagshub.com/ganeshml15/my-first-repo.mlflow")
+    mlflow.set_experiment("diabetes_prediction")
+    
     # Start MLflow run
-    with mlflow.start_run(run_name="training") as run:
-        # Load parameters
-        params = load_params()
-        
-        # Get file paths and model params from config
-        input_file = params["training"]["input"]
-        model_output = params["training"]["model_output"]
-        test_size = params["training"]["test_size"]
-        random_state = params["training"]["random_state"]
-        n_estimators = params["training"]["n_estimators"]
-        max_depth = params["training"]["max_depth"]
-        
-        # Log parameters
-        mlflow.log_params({
-            "test_size": test_size,
-            "random_state": random_state,
-            "n_estimators": n_estimators,
-            "max_depth": max_depth
-        })
-        
-        # Load data
-        data = pd.read_csv(input_file)
+    with mlflow.start_run(run_name="training"):
+        # Load preprocessed data
+        data = pd.read_csv('data/preprocessed/pima_diabetes_clean.csv')
         
         # Split features and target
-        X = data.drop(["Outcome"], axis=1)
-        y = data["Outcome"]
+        X = data.drop('Outcome', axis=1)
+        y = data['Outcome']
         
-        # Split into train and test sets
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=random_state
-        )
+        # Split data into train and test sets
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         
-        # Create and train model
-        model = RandomForestClassifier(
-            n_estimators=n_estimators,
-            max_depth=max_depth,
-            random_state=random_state
-        )
-        
+        # Train model
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
         model.fit(X_train, y_train)
         
-        # Get predictions and accuracy
-        train_preds = model.predict(X_train)
-        test_preds = model.predict(X_test)
+        # Calculate metrics
+        train_accuracy = model.score(X_train, y_train)
+        test_accuracy = model.score(X_test, y_test)
         
-        train_accuracy = accuracy_score(y_train, train_preds)
-        test_accuracy = accuracy_score(y_test, test_preds)
+        # Save metrics
+        metrics = {
+            "training_accuracy": float(train_accuracy),
+            "testing_accuracy": float(test_accuracy),
+            "n_estimators": model.n_estimators,
+            "train_samples": len(X_train),
+            "test_samples": len(X_test)
+        }
         
-        # Log metrics
-        mlflow.log_metric("training_accuracy", train_accuracy)
-        mlflow.log_metric("testing_accuracy", test_accuracy)
+        # Save metrics to file
+        os.makedirs('metrics', exist_ok=True)
+        with open('metrics/train_metrics.json', 'w') as f:
+            json.dump(metrics, f, indent=4)
         
-        # Save feature importance
-        feature_importance = pd.DataFrame({
-            'feature': X.columns,
-            'importance': model.feature_importances_
-        }).sort_values('importance', ascending=False)
-        
-        for _, row in feature_importance.iterrows():
-            mlflow.log_metric(f"importance_{row['feature']}", row['importance'])
-        
-        # Create directory for model if it doesn't exist
-        os.makedirs(os.path.dirname(model_output), exist_ok=True)
+        # Log metrics and parameters to MLflow
+        mlflow.log_metrics(metrics)
+        mlflow.log_params({
+            "n_estimators": model.n_estimators,
+            "random_state": 42
+        })
         
         # Save model
-        with open(model_output, "wb") as f:
+        os.makedirs('models', exist_ok=True)
+        model_path = 'models/random_forest_model.pkl'
+        with open(model_path, 'wb') as f:
             pickle.dump(model, f)
         
-        # Log model as artifact
-        mlflow.log_artifact(model_output)
-        
-        # Infer model signature
-        signature = infer_signature(X_train, model.predict(X_train))
-        
-        # Log scikit-learn model with signature
-        mlflow.sklearn.log_model(
-            model, 
-            "sklearn_model",
-            signature=signature,
-            input_example=X_train.iloc[0:5],
-            registered_model_name="diabetes_prediction_model"
-        )
+        # Log model to MLflow
+        mlflow.sklearn.log_model(model, "sklearn_model")
+        mlflow.log_artifact(model_path)
         
         print(f"Training accuracy: {train_accuracy:.4f}")
         print(f"Testing accuracy: {test_accuracy:.4f}")
-        print(f"Model saved to: {model_output}")
-        print(f"Model registered as: diabetes_prediction_model")
-        
-        # Get MLflow run URL and print it
-        client = mlflow.tracking.MlflowClient()
-        run_id = run.info.run_id
-        experiment_id = run.info.experiment_id
-        
-        print(f"🏃 View run training at: {mlflow.get_tracking_uri()}/#/experiments/{experiment_id}/runs/{run_id}")
-        print(f"🧪 View experiment at: {mlflow.get_tracking_uri()}/#/experiments/{experiment_id}")
+        print(f"Model saved to: {model_path}")
 
 if __name__ == "__main__":
     train()
