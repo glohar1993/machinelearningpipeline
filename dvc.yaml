@@ -1,0 +1,31 @@
+stages:
+  preprocess:
+    cmd: python src/preprocess.py
+    deps:
+      - src/preprocess.py
+      - data/raw/pima_diabetes.csv
+      - params.yaml
+    outs:
+      - data/preprocessed/pima_diabetes_clean.csv
+  
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - data/preprocessed/pima_diabetes_clean.csv
+      - params.yaml
+    outs:
+      - models/random_forest_model.pkl
+  
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+      - src/evaluate.py
+      - models/random_forest_model.pkl
+      - params.yaml
+    metrics:
+      - reports/metrics.json:
+          cache: false
+    plots:
+      - reports/confusion_matrix.png
+      - reports/feature_importance.png 
