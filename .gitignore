@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# Data and Models
+data/raw/*
+data/preprocessed/*
+models/*
+!data/raw/.gitkeep
+!data/preprocessed/.gitkeep
+!models/.gitkeep
+
+# MLflow
+mlruns/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db 

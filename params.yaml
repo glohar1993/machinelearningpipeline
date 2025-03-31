@@ -1,0 +1,41 @@
+# Configuration File for Diabetes Prediction Pipeline
+# ================================================
+#
+# This YAML file contains all configuration parameters used across the pipeline.
+# It is used by all three scripts in the following order:
+#
+# 1. preprocess.py: Uses pre_process section
+# 2. train.py: Uses train section
+# 3. evaluate.py: Uses train section for model loading
+#
+# File Structure:
+# --------------
+# pre_process:
+#   - input: Path to raw data
+#   - output: Path for processed data
+#
+# train:
+#   - input: Path to processed data
+#   - model_output: Path for saved model
+#   - random_state: For reproducibility
+#   - n_estimators: Number of trees in Random Forest
+#   - max_depth: Maximum depth of each tree
+
+preprocessing:
+  input: data/raw/pima_diabetes.csv
+  output: data/preprocessed/pima_diabetes_clean.csv
+  test_size: 0.2
+  random_state: 42
+
+training:
+  input: data/preprocessed/pima_diabetes_clean.csv
+  model_output: models/random_forest_model.pkl
+  test_size: 0.2
+  random_state: 42
+  n_estimators: 100
+  max_depth: 10
+
+evaluation:
+  model_input: models/random_forest_model.pkl
+  test_data: data/preprocessed/test_data.csv
+  reports_dir: reports

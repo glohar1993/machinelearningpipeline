@@ -1,0 +1,26 @@
+# Core ML and Data Science Libraries
+scikit-learn>=1.6.1  # Machine learning library for classification, regression, and model evaluation
+pandas>=2.2.3        # Data manipulation and analysis library
+numpy>=2.2.4         # Numerical computing library for array operations
+
+# Visualization Libraries
+matplotlib>=3.10.1   # Plotting library for creating static visualizations
+seaborn>=0.13.2      # Statistical visualization library built on top of matplotlib
+
+# MLflow and Model Tracking
+mlflow>=2.21.2       # Platform for managing the machine learning lifecycle
+dvc>=3.59.1          # Data version control for ML projects
+dagshub>=0.5.9       # Platform for hosting ML projects and experiments
+
+# AWS Integration (for S3 storage)
+boto3>=1.37.1        # AWS SDK for Python to interact with AWS services
+s3fs>=2025.3.0       # Pythonic file interface for S3
+dvc-s3>=3.2.0        # DVC S3 remote for storing data and models
+
+# YAML Configuration
+pyyaml>=6.0.2        # YAML parser and emitter for Python
+
+# Additional Dependencies
+python-dateutil>=2.9.0  # Extensions to the standard datetime module
+requests>=2.32.3       # HTTP library for making API requests
+tqdm>=4.67.1          # Progress bar library for Python
